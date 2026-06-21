@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>今日の発信テーマ</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold: #d4a843;
+      --gold-light: #f0d080;
+      --coral: #e8806a;
+      --sage: #7aab8a;
+      --indigo: #6b7fd4;
+      --rose: #e07090;
+      --cream: #fefcf9;
+      --warm-white: #ffffff;
+      --ink: #2d2820;
+      --mid-ink: #6b5d52;
+      --light-ink: #a89888;
+    }
+
+    body {
+      font-family: 'Hiragino Mincho ProN', 'Hiragino Kaku Gothic ProN', serif;
+      background: var(--cream);
+      color: var(--ink);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    canvas#sparkle {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 1;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 20% 20%, rgba(212,168,67,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 80%, rgba(232,128,106,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse at 60% 10%, rgba(107,127,212,0.06) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    nav {
+      display: flex;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(212,168,67,0.2);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 20px rgba(212,168,67,0.1);
+    }
+    nav button {
+      flex: 1;
+      padding: 15px 8px;
+      border: none;
+      background: transparent;
+      font-size: 13px;
+      color: var(--light-ink);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.25s;
+      font-family: inherit;
+    }
+    nav button.active {
+      color: var(--gold);
+      border-bottom-color: var(--gold);
+      font-weight: 700;
+    }
+
+    .page { display: none; padding: 24px 20px 80px; max-width: 480px; margin: 0 auto; position: relative; z-index: 1; }
+    .page.active { display: block; }
+
+    .today-header {
+      text-align: center;
+      padding: 24px 0 20px;
+    }
+    .today-date {
+      font-size: 11px;
+      color: var(--light-ink);
+      letter-spacing: 0.2em;
+      margin-bottom: 4px;
+    }
+    .deco-line {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 12px 0;
+    }
+    .deco-line::before, .deco-line::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(to right, transparent, rgba(212,168,67,0.4), transparent);
+    }
+    .deco-line span { font-size: 14px; color: var(--gold); }
+    .today-eyebrow {
+      font-size: 10px;
+      color: var(--gold);
+      font-weight: 700;
+      letter-spacing: 0.3em;
+    }
+
+    @property --border-angle {
+      syntax: '<angle>';
+      initial-value: 0deg;
+      inherits: false;
+    }
+    @keyframes borderSpin { to { --border-angle: 360deg; } }
+
+    .theme-card {
+      position: relative;
+      border-radius: 22px;
+      margin-bottom: 14px;
+      background: var(--warm-white);
+      padding: 28px 24px 24px;
+      box-shadow: 0 4px 24px rgba(212,168,67,0.15);
+    }
+    .theme-card::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 24px;
+      background: conic-gradient(
+        from var(--border-angle),
+        #a07820 0%, #c8a030 15%, #f0d060 28%,
+        #fff8e0 38%, #ffffff 43%, #fff8e0 48%,
+        #f0d060 58%, #c8a030 72%, #a07820 85%,
+        #c8a030 92%, #a07820 100%
+      );
+      animation: borderSpin 4s linear infinite;
+      z-index: -1;
+    }
+
+    .theme-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .theme-icon { font-size: 32px; line-height: 1; }
+    .btn-refresh {
+      background: rgba(212,168,67,0.08);
+      border: 1px solid rgba(212,168,67,0.22);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 11px;
+      color: var(--gold);
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.2s;
+    }
+    .btn-refresh:hover { background: rgba(212,168,67,0.18); }
+
+    .theme-keyword {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--ink);
+      line-height: 1.3;
+      margin-bottom: 10px;
+      font-family: 'Hiragino Mincho ProN', serif;
+      letter-spacing: 0.03em;
+    }
+    .theme-sub {
+      font-size: 13px;
+      color: var(--mid-ink);
+      line-height: 1.8;
+      margin-bottom: 16px;
+    }
+    .theme-hint {
+      font-size: 12px;
+      color: var(--light-ink);
+      line-height: 2;
+      border-top: 1px solid rgba(212,168,67,0.18);
+      padding-top: 14px;
+    }
+
+    .write-area {
+      background: var(--warm-white);
+      border: 1px solid rgba(212,168,67,0.2);
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 14px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.04);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .write-area:focus-within {
+      border-color: rgba(212,168,67,0.5);
+      box-shadow: 0 4px 20px rgba(212,168,67,0.1);
+    }
+    .write-area label {
+      font-size: 11px;
+      color: var(--light-ink);
+      display: block;
+      margin-bottom: 12px;
+      letter-spacing: 0.05em;
+    }
+    textarea {
+      width: 100%;
+      border: none;
+      outline: none;
+      font-size: 15px;
+      line-height: 2;
+      color: var(--ink);
+      resize: none;
+      background: transparent;
+      font-family: 'Hiragino Mincho ProN', serif;
+      min-height: 180px;
+    }
+    textarea::placeholder { color: #d0c8c0; }
+    .char-count {
+      text-align: right;
+      font-size: 11px;
+      color: var(--light-ink);
+      margin-top: 8px;
+    }
+
+    @keyframes btnShimmer {
+      0%   { background-position: 0% 50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .btn-done {
+      width: 100%;
+      padding: 17px;
+      background: linear-gradient(270deg, #f0c060, #e87060, #c070d0, #6090e0, #50c090, #e0a040);
+      background-size: 400% 400%;
+      animation: btnShimmer 4s ease infinite;
+      color: white;
+      border: none;
+      border-radius: 14px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      letter-spacing: 0.1em;
+      box-shadow: 0 4px 24px rgba(212,168,67,0.25);
+      transition: transform 0.1s;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    }
+    .btn-done:active { transform: scale(0.97); }
+    .btn-done.posted {
+      background: linear-gradient(270deg, #50c090, #60b0d0, #7aab8a, #50c090);
+      background-size: 300% 300%;
+      animation: btnShimmer 3s ease infinite;
+    }
+    .btn-skip {
+      width: 100%;
+      padding: 13px;
+      background: transparent;
+      color: var(--light-ink);
+      border: none;
+      font-size: 12px;
+      cursor: pointer;
+      margin-top: 8px;
+      font-family: inherit;
+    }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--light-ink);
+      letter-spacing: 0.2em;
+      margin-bottom: 14px;
+      margin-top: 6px;
+    }
+
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+    .stat-card {
+      background: var(--warm-white);
+      border: 1px solid rgba(212,168,67,0.2);
+      border-radius: 16px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.04);
+    }
+    .stat-num { font-size: 36px; font-weight: 800; color: var(--gold); }
+    .stat-label { font-size: 11px; color: var(--light-ink); margin-top: 4px; }
+
+    .post-log-item {
+      background: var(--warm-white);
+      border: 1px solid rgba(212,168,67,0.12);
+      border-radius: 14px;
+      padding: 15px 16px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+    .post-log-date { font-size: 11px; color: var(--light-ink); margin-bottom: 5px; }
+    .post-log-keyword { font-size: 15px; font-weight: 800; color: var(--gold); margin-bottom: 4px; }
+    .post-log-text { font-size: 12px; color: var(--mid-ink); line-height: 1.7; }
+
+    .empty-state { text-align: center; padding: 48px 20px; color: var(--light-ink); font-size: 14px; line-height: 2; }
+  </style>
+</head>
+<body>
+
+<canvas id="sparkle"></canvas>
+
+<nav>
+  <button class="active" onclick="showPage('today', this)">✦ 今日</button>
+  <button onclick="showPage('log', this)">◈ 記録</button>
+</nav>
+
+<!-- 今日 -->
+<div id="page-today" class="page active">
+  <div class="today-header">
+    <div class="today-date" id="today-date"></div>
+    <div class="deco-line"><span>✦</span></div>
+    <div class="today-eyebrow">TODAY'S KEYWORD</div>
+  </div>
+
+  <div class="theme-card">
+    <div class="theme-card-top">
+      <span class="theme-icon" id="theme-icon">🌸</span>
+      <button class="btn-refresh" onclick="refreshTheme()">別のキーワードに ↺</button>
+    </div>
+    <div class="theme-keyword" id="theme-keyword">読み込み中...</div>
+    <div class="theme-sub" id="theme-sub"></div>
+    <div class="theme-hint" id="theme-hint"></div>
+  </div>
+
+  <div class="write-area">
+    <label>✧ 浮かんだまま、ここに（書けたら）</label>
+    <textarea id="write-text" placeholder="きれいにまとめなくていい。&#10;あなたの中にあるものを、そのまま。" oninput="updateCharCount()"></textarea>
+    <div class="char-count"><span id="char-count">0</span> 文字</div>
+  </div>
+
+  <button class="btn-done" id="btn-done" onclick="markPosted()">✓ 投稿した！</button>
+  <button class="btn-skip" onclick="markSkip()">今日はパス　― それでいい ―</button>
+</div>
+
+<!-- 記録 -->
+<div id="page-log" class="page">
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-num" id="stat-posted">0</div>
+      <div class="stat-label">投稿した日</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="stat-streak">0</div>
+      <div class="stat-label">連続日数</div>
+    </div>
+  </div>
+  <div class="section-title">投稿の記録</div>
+  <div id="post-log"><div class="empty-state">投稿した記録が<br>ここに積み重なっていきます</div></div>
+</div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, doc, onSnapshot, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const app = initializeApp({
+  apiKey: "AIzaSyBFg7hKeerfd4_dYx-qMLrLWMo8H_glFXE",
+  authDomain: "event-funnel.firebaseapp.com",
+  projectId: "event-funnel",
+  storageBucket: "event-funnel.firebasestorage.app",
+  messagingSenderId: "493083310454",
+  appId: "1:493083310454:web:2360894489ff4466076257"
+});
+const db = getFirestore(app);
+const docRef = doc(db, 'appdata', 'daily');
+
+// キラキラ
+(function() {
+  const canvas = document.getElementById('sparkle');
+  const ctx = canvas.getContext('2d');
+  let W, H, particles = [];
+  function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+  resize(); window.addEventListener('resize', resize);
+  const colors = ['#f0d080','#e8e0c8','#d4a843','#ffffff','#c8c0b0','#f8f0d8','#b8a878'];
+  function cp() {
+    return { x: Math.random()*W, y: Math.random()*H, r: Math.random()*3+1,
+      alpha: Math.random()*0.6+0.3, color: colors[Math.floor(Math.random()*colors.length)],
+      speed: Math.random()*0.4+0.15, drift: (Math.random()-0.5)*0.4,
+      twinkle: Math.random()*Math.PI*2, twinkleSpeed: Math.random()*0.04+0.015 };
+  }
+  for (let i = 0; i < 40; i++) particles.push(cp());
+  function draw() {
+    ctx.clearRect(0,0,W,H);
+    particles.forEach(p => {
+      p.twinkle += p.twinkleSpeed;
+      const a = p.alpha*(0.4+0.6*Math.sin(p.twinkle));
+      ctx.save(); ctx.globalAlpha=a; ctx.fillStyle=p.color;
+      ctx.shadowColor=p.color; ctx.shadowBlur=10;
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill(); ctx.restore();
+      p.y-=p.speed; p.x+=p.drift;
+      if(p.y<-10) Object.assign(p,cp(),{y:H+10});
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// データ
+let postLog = [];
+let todayStatus = {};
+let saveTimer = null;
+
+async function loadData() {
+  const snap = await getDoc(docRef);
+  if (snap.exists()) {
+    const d = snap.data();
+    postLog = d.postLog || [];
+    todayStatus = d.todayStatus || {};
+  }
+  renderToday();
+  onSnapshot(docRef, snap => {
+    if (snap.exists()) {
+      const d = snap.data();
+      postLog = d.postLog || [];
+      todayStatus = d.todayStatus || {};
+      const active = document.querySelector('.page.active')?.id?.replace('page-','');
+      if (active === 'today') renderToday();
+      if (active === 'log') renderLog();
+    }
+  });
+}
+
+function saveData() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => setDoc(docRef, { postLog, todayStatus }), 500);
+}
+
+// キーワード
+const KEYWORDS = [
+  { icon: '🌊', keyword: '流れる', sub: '抵抗しないで、ただ流れる', hint: 'あなたが「流れに乗った」と感じた瞬間や体験を。' },
+  { icon: '🔥', keyword: '本氣', sub: '本当の意味で本氣になったとき', hint: '本氣でいる時と、そうでない時。何が違う？' },
+  { icon: '🌱', keyword: '種を蒔く', sub: '結果を求めずに、ただ蒔く', hint: 'すぐに実らなくていい行動について。' },
+  { icon: '✨', keyword: '気づき', sub: 'あの瞬間、何かが変わった', hint: 'ふと気づいた瞬間のことを、あなたの言葉で。' },
+  { icon: '🪞', keyword: '鏡', sub: '相手はいつも鏡', hint: '誰かを通じて自分を見た体験を。' },
+  { icon: '🌀', keyword: '探究', sub: '答えのない旅を続けること', hint: '探究することで得られたものを。' },
+  { icon: '💫', keyword: '宇宙レベル', sub: '小さな視野を外して見たら', hint: '大きな視点から見たとき、何が見える？' },
+  { icon: '🍃', keyword: 'ほどける', sub: '力を抜いたとき、本当のものが現れる', hint: '何かをほどいた体験を。' },
+  { icon: '🔑', keyword: '本質', sub: 'それ以上削れないもの', hint: 'あなたが「これが本質だ」と感じること。' },
+  { icon: '🌙', keyword: '静けさ', sub: 'ざわつきが消えた後に残るもの', hint: '静かな時間に感じることを。' },
+  { icon: '☀️', keyword: '輝く', sub: '誰かが輝いた瞬間を目撃した', hint: 'あなたが目撃した、誰かの輝きを。' },
+  { icon: '🎯', keyword: '直感', sub: '考える前に、体が知っている', hint: '直感に従った体験と、そうしなかった体験。' },
+  { icon: '🌸', keyword: '受け取る', sub: 'オープンに、ただ受け取る', hint: '素直に受け取れた瞬間のことを。' },
+  { icon: '🏔️', keyword: '覚悟', sub: 'それでもやる、と決めた瞬間', hint: 'あなたが覚悟を決めた体験を。' },
+  { icon: '🌊', keyword: '手放す', sub: 'しがみつくのをやめたとき', hint: '手放したことで起きた変化を。' },
+  { icon: '🎨', keyword: '創る', sub: 'ゼロから何かを生み出す喜び', hint: 'あなたが「創った」と感じた体験を。' },
+  { icon: '💡', keyword: '問い', sub: '答えより、問いの方が大事なときがある', hint: '今あなたの中に生きている問いを。' },
+  { icon: '🌿', keyword: '根っこ', sub: '揺れても倒れない、その根っこ', hint: 'あなたの根っこにあるものを。' },
+  { icon: '🦋', keyword: '変容', sub: 'もう元に戻れない、あの変化', hint: '変容する前と後で、何が変わった？' },
+  { icon: '🌈', keyword: '可能性', sub: 'まだ見えていない扉の先', hint: '今あなたが感じている可能性を。' },
+  { icon: '🕊️', keyword: '自由', sub: 'それが自由だと気づいた瞬間', hint: 'あなたにとっての自由とは何か。' },
+  { icon: '⚡', keyword: 'エネルギー', sub: '満ちている時と、枯れている時', hint: 'エネルギーが満ちている時、あなたは何をしている？' },
+  { icon: '🔮', keyword: '見えないもの', sub: '目には見えないけれど、確かにある', hint: 'あなたが確信している、見えないものについて。' },
+  { icon: '🌺', keyword: '美しさ', sub: 'あなたが美しいと感じるもの', hint: '日常の中で「美しい」と感じた瞬間を。' },
+  { icon: '🧭', keyword: '方向感覚', sub: '迷った時、何が羅針盤になる？', hint: 'あなたの内なる羅針盤について。' },
+  { icon: '🫧', keyword: '余白', sub: '何もない空間にあるもの', hint: '余白があることで生まれるものを。' },
+  { icon: '🌻', keyword: '喜び', sub: '純粋に、ただ嬉しかった', hint: 'あなたが純粋に喜んだ体験を。' },
+  { icon: '🎵', keyword: '共鳴', sub: '言葉を超えて、響き合う', hint: '誰かと深く共鳴した瞬間を。' },
+
+  // スピリチュアル系
+  { icon: '🔯', keyword: '魂の声', sub: '頭が何と言おうと、魂は知っている', hint: '魂の声が聞こえた瞬間のことを。' },
+  { icon: '🌌', keyword: '繋がり', sub: '見えない糸が、ある', hint: '偶然ではない繋がりを感じた体験を。' },
+  { icon: '💎', keyword: '本来の姿', sub: 'ほどけた先にある、本当のあなた', hint: '本来の自分に近づいたと感じた瞬間を。' },
+  { icon: '🕯️', keyword: '光を灯す', sub: '自分の光が、誰かを照らす', hint: 'あなたの存在が誰かの光になった体験を。' },
+  { icon: '🌀', keyword: 'アクティベーション', sub: '何かがスイッチオンになった瞬間', hint: '内側で何かが目覚めた体験を。' },
+  { icon: '🪶', keyword: '羽根が生える', sub: '重さが消えて、軽くなる', hint: '何かを手放して軽くなった感覚を。' },
+  { icon: '⭐', keyword: '星の記憶', sub: 'ここに来る前から、知っていたもの', hint: 'ずっと昔から知っていたような感覚を。' },
+  { icon: '🌊', keyword: '宇宙の流れ', sub: '自分の意志を超えた何かに動かされる', hint: '流れに乗ったと感じた体験を。' },
+  { icon: '🫀', keyword: '魂の目的', sub: 'この命を何のために使うのか', hint: 'あなたが感じている魂の目的を。' },
+  { icon: '🔮', keyword: '直観知', sub: '理由はわからないけれど、確かに知っている', hint: '知識ではなく「知っていた」体験を。' },
+  { icon: '🌠', keyword: 'シンクロ', sub: '偶然が重なりすぎて、必然に見える', hint: '最近あったシンクロニシティを。' },
+  { icon: '🧬', keyword: 'DNA', sub: '細胞レベルで変わっていく', hint: '体の深い部分で変化を感じた体験を。' },
+  { icon: '🪐', keyword: '次元', sub: '今ここにいながら、別のどこかに触れる', hint: '日常の中で次元の違いを感じた瞬間を。' },
+  { icon: '💫', keyword: '目覚め', sub: '眠っていた何かが、起きる', hint: 'あなたが「目覚めた」と感じた体験を。' },
+  { icon: '🌺', keyword: '祝福', sub: 'すべてはすでに、祝福されている', hint: '祝福を感じた瞬間のことを。' },
+  { icon: '🕊️', keyword: '許し', sub: '許した瞬間に、自分が解放される', hint: '許したことで自分が楽になった体験を。' },
+  { icon: '🌙', keyword: 'ムーンサイクル', sub: '月と自分が繋がっている感覚', hint: '月のリズムと自分のリズムについて。' },
+  { icon: '✨', keyword: 'フィールド', sub: '目に見えない場が、影響している', hint: '場やフィールドの変化を感じた体験を。' },
+  { icon: '🌿', keyword: 'グラウンディング', sub: '地に足をつけるということ', hint: '地に繋がった感覚、その大切さを。' },
+  { icon: '🦅', keyword: '高い視点', sub: '鳥が空から見るように、全体を見る', hint: '俯瞰することで見えてきたものを。' },
+  { icon: '🌈', keyword: 'チャクラ', sub: 'エネルギーが滞るとき、流れるとき', hint: 'エネルギーの流れを感じた体験を。' },
+  { icon: '🔥', keyword: '聖なる火', sub: '消えない炎が、内側にある', hint: 'あなたの中の消えない炎について。' },
+  { icon: '🫧', keyword: 'アカシック', sub: 'すべての記録が、どこかにある', hint: 'ふと「知っていた」情報が降ってきた体験を。' },
+  { icon: '💜', keyword: 'ハイヤーセルフ', sub: '高い自分が、いつも見ている', hint: 'ハイヤーセルフと繋がったと感じた瞬間を。' },
+  { icon: '🌸', keyword: '花開く', sub: 'タイミングが来たとき、自然に開く', hint: '花開く前の「もうすぐ」という感覚について。' },
+  { icon: '⚡', keyword: '降りてくる', sub: 'アイデアや言葉が、天から降ってくる', hint: '「これは自分じゃない何かが言った」体験を。' },
+  { icon: '🌻', keyword: '太陽になる', sub: '与え続けても、枯れない光', hint: '自然に与えたいと思えた体験を。' },
+  { icon: '🪷', keyword: '蓮の花', sub: '泥の中から、美しく咲く', hint: '苦しい時期があったからこそ咲けたものを。' },
+  { icon: '🌊', keyword: 'ディープダイブ', sub: '深く潜るほど、宝が見つかる', hint: '自分の深い部分に潜った体験を。' },
+  { icon: '🦋', keyword: 'スピリット', sub: '形のないものが、確かに存在する', hint: 'スピリットを感じた瞬間のことを。' },
+
+  // 日常系
+  { icon: '☕', keyword: '朝の一杯', sub: 'その一杯が、一日を作る', hint: '朝の習慣とその意味について。' },
+  { icon: '🚶', keyword: '散歩', sub: '歩きながら、何かが解ける', hint: '散歩中に気づいたことを。' },
+  { icon: '🍳', keyword: '料理する', sub: '作ることで、整っていく', hint: '料理という行為とあなたの関係を。' },
+  { icon: '📖', keyword: '読書', sub: '本が、今の自分に必要な言葉を連れてくる', hint: '最近読んだ本から受け取ったものを。' },
+  { icon: '🛁', keyword: '湯船', sub: 'お湯の中でだけ、思うこと', hint: 'お風呂の時間に浮かぶものを。' },
+  { icon: '🌅', keyword: '朝日', sub: '毎日同じようで、全く違う朝', hint: '朝の光を見て感じることを。' },
+  { icon: '🌃', keyword: '夜の静けさ', sub: '夜だけが聞かせてくれる声がある', hint: '夜の時間ならではの気づきを。' },
+  { icon: '🎧', keyword: '音楽と一緒に', sub: 'その曲が流れていた瞬間のこと', hint: '忘れられない「あの曲・あの瞬間」を。' },
+  { icon: '🌦️', keyword: '雨の日', sub: '雨でしか届かないものがある', hint: '雨の日に感じることを。' },
+  { icon: '🐱', keyword: '動物から学ぶ', sub: '言葉を持たないものが、一番正直だ', hint: '動物や自然から学んだことを。' },
+  { icon: '🍽️', keyword: 'おいしいもの', sub: 'おいしさは、記憶と繋がっている', hint: '忘れられない味と、その時の感情を。' },
+  { icon: '🧹', keyword: '掃除する', sub: '部屋が整うと、頭も整う', hint: '片付けることと自分の内側の関係を。' },
+  { icon: '🌿', keyword: '植物を育てる', sub: '急かさなくても、育つ', hint: '育てることから学んだことを。' },
+  { icon: '✉️', keyword: '手紙を書く', sub: 'キーボードでは出てこない言葉がある', hint: '手書きや手紙との関係について。' },
+  { icon: '🗣️', keyword: '会話', sub: '話しながら、自分のことを知る', hint: '誰かとの会話で気づいた自分のことを。' },
+  { icon: '😴', keyword: '眠り', sub: '眠る前と、起きた後では、何かが違う', hint: '眠りと自分のリズムについて。' },
+  { icon: '🧘', keyword: '座る', sub: 'ただ座っているだけで、何かが動く', hint: '静かに座る時間に起きることを。' },
+  { icon: '🌲', keyword: '自然の中へ', sub: '木の前に立つと、なぜか楽になる', hint: '自然の中で感じることを。' },
+  { icon: '📷', keyword: '写真を撮る', sub: '撮りたいと思ったもの、それが好きなもの', hint: '最近撮った写真に込めたものを。' },
+  { icon: '🎒', keyword: '旅に出る', sub: '日常を離れると、見えてくるもの', hint: '旅で気づいたことを（小さな外出でも）。' },
+  { icon: '🤲', keyword: 'もらったもの', sub: '受け取った言葉や行為が、今も生きている', hint: '誰かにもらって今も大切にしているものを。' },
+  { icon: '💬', keyword: 'つぶやき', sub: '誰にも言っていない、心の中のひとり言', hint: 'あなたの心の中のひとり言を聞かせて。' },
+  { icon: '🔄', keyword: 'ルーティン', sub: '繰り返しの中に、意味がある', hint: 'あなたのルーティンとその意味を。' },
+  { icon: '🌙', keyword: '月曜日の朝', sub: '週の始まりに感じること', hint: '新しい週を始める時の自分の状態を。' },
+  { icon: '🛍️', keyword: '買い物', sub: '何を選ぶかが、何を大切にしているかを示す', hint: '最近「これ！」と選んだものとその理由を。' },
+  { icon: '👥', keyword: '久しぶりの再会', sub: '時間が経って、わかること', hint: '久しぶりに会った人や場所で感じたことを。' },
+  { icon: '🎁', keyword: '贈り物', sub: '贈るという行為に込まれるもの', hint: '誰かに贈った、あるいは贈りたいものについて。' },
+  { icon: '📝', keyword: '書くこと', sub: '書いてみて、初めて気づくことがある', hint: '書くという行為とあなたの関係について。' },
+  { icon: '🌤️', keyword: '天気と気分', sub: '外の天気が、内側にも影響する', hint: '天気と自分のエネルギーの関係を。' },
+  { icon: '🏠', keyword: '家にいること', sub: 'ホームという場所が持つ意味', hint: '「家」という場所があなたに与えているものを。' },
+
+  // 探究・自己啓発系
+  { icon: '🧩', keyword: 'ピースが合わさる', sub: 'バラバラだったものが、繋がる瞬間', hint: '点と点が繋がったと感じた体験を。' },
+  { icon: '🔍', keyword: '観察する', sub: 'ただ見ているだけで、見えてくるものがある', hint: 'じっくり観察して気づいたことを。' },
+  { icon: '🪞', keyword: '思い込み', sub: 'それは事実か、それとも物語か', hint: 'あなたが手放した思い込みについて。' },
+  { icon: '🌱', keyword: '成長痛', sub: '心地よくない変化こそ、成長の証', hint: '痛みや違和感が成長だったと気づいた体験を。' },
+  { icon: '🏋️', keyword: '鍛える', sub: 'スキルより先に、在り方を鍛える', hint: 'あなたが今意識して鍛えているものを。' },
+  { icon: '🎓', keyword: '学び直す', sub: '知っていたつもりが、全然知らなかった', hint: '改めて学んで視界が開けたことを。' },
+  { icon: '🔑', keyword: '自分を知る', sub: '最も遠い旅は、自分の中への旅', hint: '最近気づいた「自分のこと」を。' },
+  { icon: '⚖️', keyword: 'バランス', sub: '偏ることも、揺り戻すことも、どちらも必要', hint: 'バランスを取り直した体験を。' },
+  { icon: '🌊', keyword: '抵抗', sub: '抵抗があるところに、宝がある', hint: '抵抗を感じた先に何があったか。' },
+  { icon: '🎯', keyword: '意図する', sub: '意識を向けたものに、エネルギーが流れる', hint: '明確に意図したことで動いた体験を。' },
+  { icon: '🗺️', keyword: 'マップを描く', sub: '見えていない地図を、歩きながら作る', hint: '自分なりの地図を描いている感覚について。' },
+  { icon: '🔄', keyword: 'パターン', sub: '繰り返すのは、まだ学んでいないから', hint: '自分の繰り返すパターンに気づいた体験を。' },
+  { icon: '💡', keyword: '仮説を立てる', sub: '正解を探すより、仮説で動く', hint: '仮説として動いてみて起きたことを。' },
+  { icon: '🌿', keyword: 'ペース', sub: '誰かと比べるペースは、自分のペースじゃない', hint: 'あなた自身のペースを取り戻した瞬間を。' },
+  { icon: '🦁', keyword: '勇気', sub: '怖くてもやる、それが勇気', hint: '怖かったけれどやってみた体験を。' },
+  { icon: '🌀', keyword: '螺旋', sub: '同じ場所に戻ってきても、高さが違う', hint: '螺旋状に深まっていると感じる探究を。' },
+  { icon: '🎪', keyword: '実験する', sub: '失敗ではなく、データを集めている', hint: '実験のつもりで試してみたことを。' },
+  { icon: '🧭', keyword: '迷子になる', sub: '迷子になってこそ、本当の道を見つける', hint: '迷った時間が実は必要だったと気づいた体験を。' },
+  { icon: '🌸', keyword: '受け入れる', sub: '変えられないものを受け入れる力', hint: 'そのままを受け入れることで変わったことを。' },
+  { icon: '🔥', keyword: '情熱の源', sub: 'やらされ感ゼロで夢中になれるもの', hint: 'あなたが情熱を感じる源はどこにある？' },
+];
+
+function pickTheme() {
+  return KEYWORDS[Math.floor(Math.random() * KEYWORDS.length)];
+}
+
+function applyTheme(t) {
+  document.getElementById('theme-icon').textContent = t.icon;
+  document.getElementById('theme-keyword').textContent = t.keyword;
+  document.getElementById('theme-sub').textContent = t.sub;
+  document.getElementById('theme-hint').textContent = t.hint;
+}
+
+function renderToday() {
+  const today = new Date();
+  document.getElementById('today-date').textContent =
+    today.toLocaleDateString('ja-JP', { year:'numeric', month:'long', day:'numeric', weekday:'long' });
+
+  const dateKey = today.toISOString().split('T')[0];
+  if (!todayStatus[dateKey]?.theme) {
+    const theme = pickTheme();
+    todayStatus[dateKey] = { ...(todayStatus[dateKey]||{}), theme };
+    saveData();
+  }
+  applyTheme(todayStatus[dateKey].theme);
+
+  if (todayStatus[dateKey]?.text) {
+    document.getElementById('write-text').value = todayStatus[dateKey].text;
+    updateCharCount();
+  } else {
+    document.getElementById('write-text').value = '';
+    document.getElementById('char-count').textContent = '0';
+  }
+
+  const btn = document.getElementById('btn-done');
+  if (todayStatus[dateKey]?.posted) {
+    btn.textContent = '✓ 今日は投稿した！'; btn.classList.add('posted');
+  } else {
+    btn.textContent = '✓ 投稿した！'; btn.classList.remove('posted');
+  }
+}
+
+function refreshTheme() {
+  const dateKey = new Date().toISOString().split('T')[0];
+  const theme = pickTheme();
+  todayStatus[dateKey] = { ...(todayStatus[dateKey]||{}), theme };
+  saveData();
+  applyTheme(theme);
+}
+
+function updateCharCount() {
+  const len = document.getElementById('write-text').value.length;
+  document.getElementById('char-count').textContent = len;
+  const dateKey = new Date().toISOString().split('T')[0];
+  todayStatus[dateKey] = { ...(todayStatus[dateKey]||{}), text: document.getElementById('write-text').value };
+  saveData();
+}
+
+function markPosted() {
+  const dateKey = new Date().toISOString().split('T')[0];
+  const text = document.getElementById('write-text').value;
+  const theme = todayStatus[dateKey]?.theme;
+  todayStatus[dateKey] = { ...(todayStatus[dateKey]||{}), posted: true, text: '' };
+  postLog.push({ date: dateKey, keyword: theme?.keyword||'', icon: theme?.icon||'', text });
+  saveData();
+
+  document.getElementById('write-text').value = '';
+  document.getElementById('char-count').textContent = '0';
+
+  const newTheme = pickTheme();
+  todayStatus[dateKey] = { ...(todayStatus[dateKey]||{}), theme: newTheme };
+  saveData();
+  applyTheme(newTheme);
+
+  const btn = document.getElementById('btn-done');
+  btn.textContent = '✓ 今日は投稿した！'; btn.classList.add('posted');
+}
+
+function markSkip() {
+  const dateKey = new Date().toISOString().split('T')[0];
+  todayStatus[dateKey] = { ...(todayStatus[dateKey]||{}), skipped: true };
+  saveData();
+  alert('それでいい。また明日 ☻');
+}
+
+function renderLog() {
+  document.getElementById('stat-posted').textContent = postLog.length;
+  let streak = 0;
+  const today = new Date();
+  for (let i = 0; i < 365; i++) {
+    const d = new Date(today); d.setDate(d.getDate()-i);
+    const key = d.toISOString().split('T')[0];
+    if (todayStatus[key]?.posted) streak++;
+    else if (i > 0) break;
+  }
+  document.getElementById('stat-streak').textContent = streak;
+  const logEl = document.getElementById('post-log');
+  if (!postLog.length) { logEl.innerHTML = '<div class="empty-state">投稿した記録が<br>ここに積み重なっていきます</div>'; return; }
+  logEl.innerHTML = [...postLog].reverse().map(p => `
+    <div class="post-log-item">
+      <div class="post-log-date">${new Date(p.date+'T00:00:00').toLocaleDateString('ja-JP',{month:'long',day:'numeric'})}</div>
+      <div class="post-log-keyword">${p.icon} ${p.keyword}</div>
+      <div class="post-log-text">${p.text?p.text.slice(0,80)+(p.text.length>80?'…':''):'（メモなし）'}</div>
+    </div>`).join('');
+}
+
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (id === 'today') renderToday();
+  if (id === 'log') renderLog();
+}
+
+window.showPage = showPage;
+window.refreshTheme = refreshTheme;
+window.updateCharCount = updateCharCount;
+window.markPosted = markPosted;
+window.markSkip = markSkip;
+
+loadData();
+</script>
+</body>
+</html>
