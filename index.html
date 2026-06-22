@@ -406,13 +406,14 @@ let todayStatus = {};
 let saveTimer = null;
 
 async function loadData() {
+  renderToday(); // Firebaseを待たずにまず表示
   const snap = await getDoc(docRef);
   if (snap.exists()) {
     const d = snap.data();
     postLog = d.postLog || [];
     todayStatus = d.todayStatus || {};
   }
-  renderToday();
+  renderToday(); // データ取得後に再描画
   onSnapshot(docRef, snap => {
     if (snap.exists()) {
       const d = snap.data();
